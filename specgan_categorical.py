@@ -122,14 +122,24 @@ class RandomWeightedAverage(_Merge):
 
 def generate_images(generator_model, output_dir, epoch):
     """Feeds random seeds into the generator and tiles and saves the output to a PNG file."""
-    test_image_stack = generator_model.predict(np.random.rand(10, 100))
+    
+    for category_number in range(0,3):
+      number_of_samples= 9  #SHOULD BE A MULTIPLE OF 3 
+      dd=np.array([0,0,0])
+      dd[category_number]=1
+      gen_input=np.hstack (  (np.random.rand(number_of_samples, 52), np.tile(dd, (number_of_samples,16))  ))
+      # np.random.rand(10, 100)
 
-    # generate and save sample audio file for each epoch
-    for i in range(4):
-        w = test_image_stack[i]
-        outfile = os.path.join(output_dir, "train_epoch_%02d(%02d).wav" % (epoch, i))
-        save_audio(w,outfile)
+      test_image_stack = generator_model.predict(gen_input)
 
+      # generate and save sample audio file for each epoch
+      for i in range(number_of_samples):
+          w = test_image_stack[i]
+          outfile = os.path.join(output_dir, "train_epoch_%02d(%02d)_category_%2d.wav" % (epoch, i, category_number))
+          save_audio(w,outfile)
+
+    #SLICE test_image_stack to 10 (for savingimage)
+    # test_image_stack=test_image_stack  [!shortlist here]
     test_image_stack = (test_image_stack * 127.5) + 127.5
     test_image_stack = np.squeeze(np.round(test_image_stack).astype(np.uint8))
     tiled_output = tile_images(test_image_stack)
@@ -326,7 +336,7 @@ for epoch in range(args.epochs):
         write_tensorboard_log(g_callback, g_names, [g_logs], nb_batch)
 
     # export generated images and save sample audio per each epoch
-    generate_images(generator, args.output_dir, epoch)
+    generate_images(generator, args.output_dir, epoch, )
 
     # save models at checkpoints
     if epoch % args.checkpoints == 0:

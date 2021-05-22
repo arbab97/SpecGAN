@@ -317,7 +317,11 @@ for epoch in range(args.epochs):
             write_tensorboard_log(d_callback, d_names, d_logs, nb_batch)
 
         # training G
-        g_logs = generator_model.train_on_batch(np.random.rand(BATCH_SIZE, 100), [positive_y])
+        # print(categories_batch.shape)
+        # print(np.tile(categories_batch, (1,16))  .shape)
+        g_logs_input=np.hstack (  (np.random.rand(BATCH_SIZE, 52), np.tile(categories_batch, (1,16))  ))
+        # print(np.tile(categories_batch, (BATCH_SIZE,2)))
+        g_logs = generator_model.train_on_batch(g_logs_input, [positive_y])
         nb_batch =  epoch * (batch_per_epoch * TRAINING_RATIO) + i * TRAINING_RATIO
         write_tensorboard_log(g_callback, g_names, [g_logs], nb_batch)
 

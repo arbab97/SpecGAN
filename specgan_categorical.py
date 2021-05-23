@@ -122,12 +122,16 @@ class RandomWeightedAverage(_Merge):
 def generate_images(generator_model, output_dir, epoch):
     """Feeds random seeds into the generator and tiles and saves the output to a PNG file."""
     z = np.random.rand(10,100)
-    a = np.array([0]*20)
-    b =  np.array([1]*20)
-    c =  np.array([2]*20)
-    z[0][80:] = a
-    z[1][80:] = b
-    z[2][80:] = c
+    a = np.array([1,0,0])
+    b =  np.array([0,1,0])
+    c =  np.array([0,0,1])
+    # a = np.random.rand(20)
+    # b =  np.random.rand(20)
+    # c =  np.random.rand(20)
+        
+    z[0][97:] = a
+    z[1][97:] = b
+    z[2][97:] = c
     test_image_stack = generator_model.predict(z)
     # generate and save sample audio file for each epoch
     for i in range(3):
@@ -143,21 +147,21 @@ def generate_images(generator_model, output_dir, epoch):
     tiled_output.save(outfile)
     if not epoch%1000:
         z = np.random.rand(30,100)
-        z[ : , 80: ] =a
+        z[ : , 97: ] =a
         t_image_stack = generator_model.predict(z)
         for i in range(30):
             w = t_image_stack[i]
             outfile = os.path.join(output_dir, "cat1_master_epoch_%02d(%02d).wav" % (epoch, i))
             save_audio(w,outfile)
         z = np.random.rand(30,100)
-        z[ : , 80: ]=b
+        z[ : , 97: ]=b
         t_image_stack = generator_model.predict(z)
         for i in range(30):
             w = t_image_stack[i]
             outfile = os.path.join(output_dir, "cat2_master_epoch_%02d(%02d).wav" % (epoch, i))
             save_audio(w,outfile)
         z = np.random.rand(30,100)
-        z[ : , 80: ]=c
+        z[ : , 97: ]=c
         t_image_stack = generator_model.predict(z)
         for i in range(30):
             w = t_image_stack[i]
@@ -345,11 +349,13 @@ for epoch in range(args.epochs):
         # training G
         # print(categories_batch.shape)
         # print(np.tile(categories_batch, (1,16))  .shape)
-        aa=np.argmax(categories_batch, axis=1)
-        aaa=np.expand_dims(aa, axis=1)
-        category_input=np.tile(aaa, (1,20))
 
-        g_logs_input=np.hstack (  (np.random.rand(BATCH_SIZE, 80),  category_input ))
+        # aa=np.argmax(categories_batch, axis=1)/2.0
+        # aaa=np.expand_dims(aa, axis=1)
+        # category_input=np.tile(aaa, (1,5))
+
+        g_logs_input=np.hstack (  (np.random.rand(BATCH_SIZE, 97),  categories_batch ))
+        # g_logs_input=(np.random.rand(BATCH_SIZE, 100) )
         # print(np.tile(categories_batch, (BATCH_SIZE,2)))
         g_logs = generator_model.train_on_batch(g_logs_input, [positive_y])
         nb_batch =  epoch * (batch_per_epoch * TRAINING_RATIO) + i * TRAINING_RATIO

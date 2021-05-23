@@ -119,34 +119,50 @@ class RandomWeightedAverage(_Merge):
         weights = K.random_uniform((BATCH_SIZE, 1, 1, 1))
         return (weights * inputs[0]) + ((1 - weights) * inputs[1])
 
-
 def generate_images(generator_model, output_dir, epoch):
     """Feeds random seeds into the generator and tiles and saves the output to a PNG file."""
-    
-    for category_number in range(0,3):
-      number_of_samples= 9  #SHOULD BE A MULTIPLE OF 3 
-      dd=np.array([0,0,0])
-      dd[category_number]=1
-      gen_input=np.hstack (  (np.random.rand(number_of_samples, 52), np.tile(dd, (number_of_samples,16))  ))
-      # np.random.rand(10, 100)
+    z = np.random.rand(10,100)
+    a = np.array([0]*20)
+    b =  np.array([1]*20)
+    c =  np.array([2]*20)
+    z[0][80:] = a
+    z[1][80:] = b
+    z[2][80:] = c
+    test_image_stack = generator_model.predict(z)
+    # generate and save sample audio file for each epoch
+    for i in range(3):
+        w = test_image_stack[i]
+        outfile = os.path.join(output_dir, "train_epoch_%02d_class(%02d).wav" % (epoch, i))
+        save_audio(w,outfile)
 
-      test_image_stack = generator_model.predict(gen_input)
-
-      # generate and save sample audio file for each epoch
-      for i in range(number_of_samples):
-          w = test_image_stack[i]
-          outfile = os.path.join(output_dir, "train_epoch_%02d(%02d)_category_%2d.wav" % (epoch, i, category_number))
-          save_audio(w,outfile)
-
-    #SLICE test_image_stack to 10 (for savingimage)
-    # test_image_stack=test_image_stack  [!shortlist here]
     test_image_stack = (test_image_stack * 127.5) + 127.5
     test_image_stack = np.squeeze(np.round(test_image_stack).astype(np.uint8))
     tiled_output = tile_images(test_image_stack)
     tiled_output = Image.fromarray(tiled_output, mode='L')  # L specifies greyscale
     outfile = os.path.join(output_dir, 'epoch_{}.png'.format(epoch))
     tiled_output.save(outfile)
-
+    if not epoch%1000:
+        z = np.random.rand(30,100)
+        z[ : , 80: ] =a
+        t_image_stack = generator_model.predict(z)
+        for i in range(30):
+            w = t_image_stack[i]
+            outfile = os.path.join(output_dir, "cat1_master_epoch_%02d(%02d).wav" % (epoch, i))
+            save_audio(w,outfile)
+        z = np.random.rand(30,100)
+        z[ : , 80: ]=b
+        t_image_stack = generator_model.predict(z)
+        for i in range(30):
+            w = t_image_stack[i]
+            outfile = os.path.join(output_dir, "cat2_master_epoch_%02d(%02d).wav" % (epoch, i))
+            save_audio(w,outfile)
+        z = np.random.rand(30,100)
+        z[ : , 80: ]=c
+        t_image_stack = generator_model.predict(z)
+        for i in range(30):
+            w = t_image_stack[i]
+            outfile = os.path.join(output_dir, "cat3_master_epoch_%02d(%02d).wav" % (epoch, i))
+            save_audio(w,outfile)
 def save_audio(y, path):
     """ generate a wav file from a given spectrogram and save it """
     s = np.squeeze(y)
@@ -329,7 +345,11 @@ for epoch in range(args.epochs):
         # training G
         # print(categories_batch.shape)
         # print(np.tile(categories_batch, (1,16))  .shape)
-        g_logs_input=np.hstack (  (np.random.rand(BATCH_SIZE, 52), np.tile(categories_batch, (1,16))  ))
+        aa=np.argmax(categories_batch, axis=1)
+        aaa=np.expand_dims(aa, axis=1)
+        category_input=np.tile(aaa, (1,20))
+
+        g_logs_input=np.hstack (  (np.random.rand(BATCH_SIZE, 80),  category_input ))
         # print(np.tile(categories_batch, (BATCH_SIZE,2)))
         g_logs = generator_model.train_on_batch(g_logs_input, [positive_y])
         nb_batch =  epoch * (batch_per_epoch * TRAINING_RATIO) + i * TRAINING_RATIO
